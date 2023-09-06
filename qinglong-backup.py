@@ -50,7 +50,7 @@ if env("QLBK_MAX_FLIES"):
     QLBK_MAX_FLIES = int(env("QLBK_MAX_FLIES"))
     logger.info(f'检测到设置变量 QLBK_MAX_FLIES = {QLBK_MAX_FLIES}')
 
-EXEC_SIGN_IN = True  # 默认开启备份
+EXEC_SIGN_IN = True  # 默认开启签到
 if env("EXEC_SIGN_IN"):
     EXEC_SIGN_IN = int(env("EXEC_SIGN_IN"))
     logger.info(f'检测到设置变量 EXEC_SIGN_IN = {EXEC_SIGN_IN}')
