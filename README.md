@@ -1,4 +1,4 @@
-# qinglong_Backup
+# qinglong-backup
 
 - 将[青龙](https://github.com/whyour/qinglong)的基本配置文件及脚本备份至阿里网盘
 
@@ -18,7 +18,7 @@
 
 # 变量
 
-  - `QLBK_EXCLUDE_NAMES` 排除备份`/ql/`下的目录
+  - `QLBK_EXCLUDE_NAMES` 排除备份`/ql/[data/]`下的目录
 
     默认为 `['log', '.git', '.github', 'node_modules', 'backups', '.pnpm-store']`
 
@@ -28,11 +28,15 @@
     
   - `QLBK_UPLOAD_PATH` 网盘上传目录`<QLBK_UPLOAD_PATH>`
   
-    默认为 `backups`，需手动在阿里云-文件-备份盘下创建，多层目录/连接
+    默认为 `backups`，需手动在`阿里云盘/文件/备份盘`下创建，多层目录`/`连接
     
   - `QLBK_MAX_FLIES` 最大备份数
 
     默认为 `5`
+
+  - `EXEC_SIGN_IN` 是否进行自动签到
+
+    默认为 `True`
 
 # 恢复备份
 
