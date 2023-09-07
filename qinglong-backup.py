@@ -6,6 +6,7 @@ Author: AKA-Cigma
 功能：自动备份qinglong基本文件至阿里云盘&阿里云盘签到
 Date: 2023/08/29 重构代码支持单独指定云盘上传路径&始终保持备份数量小于等于设定值
 2023/09/06 新增阿里云盘签到
+2023/09/07 新增自动创建备份路径
 cron: 0 2 * * *
 new Env('青龙备份与阿里云盘签到');
 '''
@@ -77,6 +78,9 @@ def backup():
         sys.exit(1)
     logger.info('备份文件压缩完成...开始上传至阿里云盘')
     remote_folder = ali.get_folder_by_path(f'{QLBK_UPLOAD_PATH}')  # 云盘目录
+    if remote_folder == None:
+        ali.create_folder(f'{QLBK_UPLOAD_PATH}')
+        remote_folder = ali.get_folder_by_path(f'{QLBK_UPLOAD_PATH}')
     ali.sync_folder(f'{bak_path}/',  # 上传至网盘
                     flag=True,
                     remote_folder=remote_folder.file_id)
@@ -184,7 +188,7 @@ def sign_in():
         signInCount = result['signInCount']
         logger.info(f'本月签到次数: {signInCount}')
     except Exception as e:
-        text = f'签到失败：{e}'
+        text = f'签到失败：{str(e)}'
         logger.info(f'！！！{text}！！！')
         return text
 
@@ -195,7 +199,7 @@ def sign_in():
         notice = result['notice']
         logger.info(notice)
     except Exception as e:
-        text = f'签到成功，第{signInCount}天奖励领取失败: {e}'
+        text = f'签到成功，第{signInCount}天奖励领取失败: {str(e)}'
         logger.info(f'！！！{text}！！！')
         return text
 
