@@ -1,6 +1,6 @@
 # qinglong-backup
 
-- 将[青龙](https://github.com/whyour/qinglong)的基本配置文件及脚本备份至阿里网盘
+- 将[青龙](https://github.com/whyour/qinglong)的基本配置文件及脚本备份至阿里网盘&阿里网盘自动签到
 
 # 使用
 
