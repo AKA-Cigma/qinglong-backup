@@ -28,7 +28,7 @@
     
   - `QLBK_UPLOAD_PATH` 网盘上传目录`<QLBK_UPLOAD_PATH>`
   
-    默认为 `backups`，需手动在`阿里云盘/文件/备份盘`下创建，多层目录`/`连接
+    默认为 `backups`，如网盘中不存在会自动在`阿里云盘/文件/备份盘`下创建，多层目录`/`连接
     
   - `QLBK_MAX_FLIES` 最大备份数
 
