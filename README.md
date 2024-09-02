@@ -30,9 +30,13 @@
   
     默认为 `backups`，如网盘中不存在会自动在`阿里云盘/文件/备份盘`下创建，多层目录`/`连接
     
-  - `QLBK_MAX_FLIES` 最大备份数
+  - `QLBK_MAX_FLIES` 本地最大备份数
 
     默认为 `5`
+
+  - `QLBK_CLOUD_MAX_FLIES` 云端最大备份数
+
+    默认为 `10`
 
   - `EXEC_SIGN_IN` 是否进行自动签到
 
