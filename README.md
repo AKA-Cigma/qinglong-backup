@@ -36,7 +36,7 @@
 
   - `QLBK_CLOUD_MAX_FLIES` 云端最大备份数
 
-    默认为 `10`
+    默认为 `100`
 
   - `EXEC_SIGN_IN` 是否进行自动签到
 
