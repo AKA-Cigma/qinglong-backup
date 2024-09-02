@@ -7,6 +7,7 @@ Author: AKA-Cigma
 Date: 2023/08/29 重构代码支持单独指定云盘上传路径&始终保持备份数量小于等于设定值
 2023/09/06 新增阿里云盘签到
 2023/09/07 新增自动创建备份路径
+2024/09/02 移除领取签到奖励操作，aligo库作者都搞不定加密我能有什么办法，有需要的月底自己手动领吧&新增支持独立设置本地和云端备份数量
 cron: 0 2 * * *
 new Env('青龙备份与阿里云盘签到');
 '''
@@ -46,16 +47,25 @@ if env("QLBK_UPLOAD_PATH"):
     QLBK_UPLOAD_PATH = str(env("QLBK_UPLOAD_PATH"))
     logger.info(f'检测到设置变量 QLBK_UPLOAD_PATH = {QLBK_UPLOAD_PATH}')
 
-QLBK_MAX_FLIES = 5  # 最大备份保留数量默认5个
+QLBK_MAX_FLIES = 5  # 最大本地备份保留数量默认5个
 if env("QLBK_MAX_FLIES"):
     QLBK_MAX_FLIES = int(env("QLBK_MAX_FLIES"))
     logger.info(f'检测到设置变量 QLBK_MAX_FLIES = {QLBK_MAX_FLIES}')
+
+QLBK_CLOUD_MAX_FLIES = 10  # 最大云端备份保留数量默认10个且必须大于等于本地备份数量
+if env("QLBK_CLOUD_MAX_FLIES"):
+    QLBK_CLOUD_MAX_FLIES = int(env("QLBK_CLOUD_MAX_FLIES"))
+    logger.info(f'检测到设置变量 QLBK_CLOUD_MAX_FLIES = {QLBK_CLOUD_MAX_FLIES}')
+    if QLBK_CLOUD_MAX_FLIES < QLBK_MAX_FLIES:
+        QLBK_CLOUD_MAX_FLIES = QLBK_MAX_FLIES
+        logger.info(f'最大云端备份保留数量必须大于等于本地备份数量！已自动重设 QLBK_CLOUD_MAX_FLIES = {QLBK_MAX_FLIES}')
 
 EXEC_SIGN_IN = True  # 默认开启签到
 if env("EXEC_SIGN_IN"):
     EXEC_SIGN_IN = int(env("EXEC_SIGN_IN"))
     logger.info(f'检测到设置变量 EXEC_SIGN_IN = {EXEC_SIGN_IN}')
 
+REMOTE_FOLDER_ID = '0'
 run_path = '/ql/data'
 bak_path = f'{run_path}/{QLBK_BACKUPS_PATH}'
 
@@ -77,13 +87,9 @@ def backup():
             logger.info("！！！通知发送失败！！！")
         sys.exit(1)
     logger.info('备份文件压缩完成...开始上传至阿里云盘')
-    remote_folder = ali.get_folder_by_path(f'{QLBK_UPLOAD_PATH}')  # 云盘目录
-    if remote_folder == None:
-        ali.create_folder(f'{QLBK_UPLOAD_PATH}')
-        remote_folder = ali.get_folder_by_path(f'{QLBK_UPLOAD_PATH}')
     ali.sync_folder(f'{bak_path}/',  # 上传至网盘
                     flag=True,
-                    remote_folder=remote_folder.file_id)
+                    remote_folder=REMOTE_FOLDER_ID)
     checkdir(bak_path)
     message_up_time = time.strftime(
         "%Y年%m月%d日 %H时%M分%S秒", time.localtime())
@@ -111,16 +117,28 @@ def make_targz(output_filename):
 
 def checkdir(path):
     """检查备份目录"""
+    remote_folder = ali.get_folder_by_path(f'{QLBK_UPLOAD_PATH}')  # 云盘目录
+    if remote_folder == None:
+        ali.create_folder(f'{QLBK_UPLOAD_PATH}')
+        remote_folder = ali.get_folder_by_path(f'{QLBK_UPLOAD_PATH}')
+    global REMOTE_FOLDER_ID
+    REMOTE_FOLDER_ID = remote_folder.file_id
+
     if not os.path.exists(path):  # 判断是否存在文件夹如果不存在则创建为文件夹
         logger.info(f'第一次备份,创建备份目录: {path}')
         os.makedirs(path)  # 创建文件时如果路径不存在会创建这个路径
     else:  # 如有备份文件夹则检查备份文件数量
         files_all = os.listdir(path)  # path中的所有文件
-        logger.info(f'当前备份文件 {len(files_all)}/{QLBK_MAX_FLIES}')
+        logger.info(f'当前本地备份文件 {len(files_all)}/{QLBK_MAX_FLIES}')
         files_num = len(files_all)
-        if files_num > QLBK_MAX_FLIES:
-            logger.info(f'达到最大备份数量 {QLBK_MAX_FLIES} 个')
-            check_files(files_all, files_num, path)
+
+        cloud_files_all = ali.get_file_list(REMOTE_FOLDER_ID)  # path中的所有文件
+        logger.info(f'当前云端备份文件 {len(cloud_files_all)}/{QLBK_CLOUD_MAX_FLIES}')
+        cloud_files_num = len(cloud_files_all)
+
+        if files_num > QLBK_MAX_FLIES or cloud_files_num > QLBK_CLOUD_MAX_FLIES:
+            logger.info(f'达到最大备份数量')
+            check_files(files_all, files_num, cloud_files_all, cloud_files_num, path)
 
 
 def show(qr_link: str):
@@ -129,23 +147,26 @@ def show(qr_link: str):
     logger.info(f'https://cli.im/api/qrcode/code?text={qr_link}')
 
 
-def fileremove(backup_dir, name):
+def file_remove(backup_dir, name):
     """删除旧的备份文件"""
     filename = os.path.join(backup_dir, name)
     if os.path.exists(filename):
         os.remove(filename)
         logger.info('已删除本地旧的备份文件: %s' % filename)
-        remote_folder = ali.get_file_by_path(f'{QLBK_UPLOAD_PATH}/{name}')  # 待删除文件 ID
-        if remote_folder is not None:
-            ali.move_file_to_trash(file_id=remote_folder.file_id)
-            logger.info('已删除云盘旧的备份文件: %s' % f'{QLBK_UPLOAD_PATH}/{name}')
-        else:
-            logger.info('未找到云端旧的备份文件: %s' % f'{QLBK_UPLOAD_PATH}/{name}')
     else:
         pass
 
 
-def check_files(files_all, files_num, backup_dir):
+def cloud_file_remove(cloud_files_all, remove_num):
+    """删除旧的备份文件"""
+    sorted_files = sorted(cloud_files_all, key=lambda x: x.name)
+    #logger.info(sorted_files)
+    for file in sorted_files[:remove_num]:
+        ali.move_file_to_trash(file_id=file.file_id)
+        logger.info('已删除云盘旧的备份文件: %s' % f'{file.name}')
+
+
+def check_files(files_all, files_num, cloud_files_all, cloud_files_num, backup_dir):
     """检查旧的备份文件"""
     create_time = []
     file_name = []
@@ -158,8 +179,12 @@ def check_files(files_all, files_num, backup_dir):
     dit = dict(zip(create_time, file_name))
     # 根据dit的key对dit进行排序（变为list）
     dit = sorted(dit.items(), key=lambda d: d[-2], reverse=False)
-    for i in range(files_num - QLBK_MAX_FLIES):  # 删除文件个数
-        fileremove(backup_dir, dit[i][1])
+    if files_num > QLBK_MAX_FLIES:
+        for i in range(files_num - QLBK_MAX_FLIES):  # 删除文件个数
+            file_remove(backup_dir, dit[i][1])
+
+    if cloud_files_num > QLBK_CLOUD_MAX_FLIES:
+        cloud_file_remove(cloud_files_all, cloud_files_num - QLBK_CLOUD_MAX_FLIES)
 
 
 def sign_in_list():
@@ -193,17 +218,18 @@ def sign_in():
         return text
 
     # 签到
-    try:
-        resp = sign_in_reward(signInCount)
-        result = resp.json()['result']
-        notice = result['notice']
-        logger.info(notice)
-    except Exception as e:
-        text = f'签到成功，第{signInCount}天奖励领取失败: {str(e)}'
-        logger.info(f'！！！{text}！！！')
-        return text
+    # try:
+    #     resp = sign_in_reward(signInCount)
+    #     result = resp.json()['result']
+    #     logger.info(result)
+    #     notice = result['notice']
+    #     logger.info(notice)
+    # except Exception as e:
+    #     text = f'签到成功，第{signInCount}天奖励领取失败: {str(e)}'
+    #     logger.info(f'！！！{text}！！！')
+    #     return text
 
-    text = f'签到成功，第{signInCount}天奖励领取成功: {notice}'
+    text = f'第{signInCount}天签到成功，领取奖励搞不定，有需要的月底自己手动领'
     logger.info(f'---------------------{text}---------------------')
     return text
 
