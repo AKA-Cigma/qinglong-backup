@@ -52,7 +52,7 @@ if env("QLBK_MAX_FLIES"):
     QLBK_MAX_FLIES = int(env("QLBK_MAX_FLIES"))
     logger.info(f'检测到设置变量 QLBK_MAX_FLIES = {QLBK_MAX_FLIES}')
 
-QLBK_CLOUD_MAX_FLIES = 10  # 最大云端备份保留数量默认10个且必须大于等于本地备份数量
+QLBK_CLOUD_MAX_FLIES = 100  # 最大云端备份保留数量默认100个且必须大于等于本地备份数量
 if env("QLBK_CLOUD_MAX_FLIES"):
     QLBK_CLOUD_MAX_FLIES = int(env("QLBK_CLOUD_MAX_FLIES"))
     logger.info(f'检测到设置变量 QLBK_CLOUD_MAX_FLIES = {QLBK_CLOUD_MAX_FLIES}')
