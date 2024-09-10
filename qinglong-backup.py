@@ -44,11 +44,8 @@ def env(key):
 QLBK_EXCLUDE_NAMES = ['log', '.git', '.github',
                       'node_modules', 'backups', '.pnpm-store']  # 排除目录名
 if env("QLBK_EXCLUDE_NAMES"):
-    try:
-        QLBK_EXCLUDE_NAMES = json.loads(str(env("QLBK_EXCLUDE_NAMES")))
-        logger.warning(f'检测到设置变量 QLBK_EXCLUDE_NAMES = {QLBK_EXCLUDE_NAMES}')
-    except Exception as e:
-        logger.error(f'变量 QLBK_EXCLUDE_NAMES 格式错误: {str(e)}，已自动重设为默认值')
+    QLBK_EXCLUDE_NAMES = env("QLBK_EXCLUDE_NAMES")
+    logger.info(f'检测到设置变量 QLBK_EXCLUDE_NAMES = {QLBK_EXCLUDE_NAMES}')
 
 QLBK_BACKUPS_PATH = 'backups'  # 备份自动生成的目录
 if env("QLBK_BACKUPS_PATH"):
