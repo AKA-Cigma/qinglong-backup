@@ -21,7 +21,7 @@
 
   - `QLBK_EXCLUDE_NAMES` 排除备份`/ql/[data/]`下的目录
 
-    默认为 `['log', '.git', '.github', 'node_modules', 'backups', '.pnpm-store']`，不需要是列表形式，只要包含要排除的目录名字就可以，比如`log, .git, .github, node_modules, backups, .pnpm-store`
+    默认为 `['log', 'syslog', '.git', '.github', 'node_modules', 'backups', '.pnpm-store']`，不需要是列表形式，只要包含要排除的目录名字就可以，比如`log, syslog, .git, .github, node_modules, backups, .pnpm-store`
 
   - `QLBK_BACKUPS_PATH` 备份目录`/ql/[data/]<QLBK_BACKUPS_PATH>`
   
@@ -113,6 +113,20 @@
      --hostname qinglong \
      --restart unless-stopped \
      whyour/qinglong:latest
+   ```
+
+   例 qinglong 2.12.0 及其之后版本（docker-run），会将本地路径映射到容器，可修改版本分支：
+
+   ```diff
+   docker run -dit \
+     -v $PWD/ql/data:/ql/data \
+     -p 5700:5700 \
+     -e QlBaseUrl="/" \
+     -e QlPort="5700" \
+     --name qinglong \
+     --hostname qinglong \
+     --restart unless-stopped \
+     whyour/qinglong:debian
    ```
 
 # 感谢
