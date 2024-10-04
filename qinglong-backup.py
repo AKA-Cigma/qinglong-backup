@@ -41,7 +41,7 @@ def env(key):
     return os.environ.get(key)
 
 
-QLBK_EXCLUDE_NAMES = ['log', '.git', '.github',
+QLBK_EXCLUDE_NAMES = ['log', 'syslog', '.git', '.github',
                       'node_modules', 'backups', '.pnpm-store']  # 排除目录名
 if env("QLBK_EXCLUDE_NAMES"):
     QLBK_EXCLUDE_NAMES = env("QLBK_EXCLUDE_NAMES")
